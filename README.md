@@ -49,6 +49,8 @@ Expected URL: `https://USERNAME.github.io/REPOSITORY_NAME/`. For a repository na
 
 The workflow uses `npm ci`, automated tests and the type-checked production build, uploads `dist`, and deploys with `pages: write` and `id-token: write`. There is no client routing, so refreshes do not require a routing fallback.
 
+If `configure-pages` fails with `Get Pages site failed` / `HttpError: Not Found`, complete step 2 above, then rerun the workflow. Pages must be enabled with **Source: GitHub Actions** before this workflow can deploy. Adding `enablement: true` alone does not fix this: automatic enablement requires a separate token with additional permissions, rather than the default `GITHUB_TOKEN`.
+
 ## Privacy and limitations
 
 Generation, image resizing and exports run locally. No content is uploaded, logged or stored. Refreshing the page clears your inputs. Assets are served by your hosting provider, which may have its own request logs, but QR content is never sent with those requests.
