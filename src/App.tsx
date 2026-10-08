@@ -30,7 +30,7 @@ export default function App() {
   });
   const [language, setLanguage] = useState<Language>(() => localStorage.getItem('local-qr-language') === 'th' ? 'th' : 'en');
   const [type, setType] = useState<QRType>('url');
-  const [fields, setFields] = useState({ ...emptyFields, url: 'example.com' });
+  const [fields, setFields] = useState({ ...emptyFields });
   const [foreground, setForeground] = useState('#000000');
   const [background, setBackground] = useState('#ffffff');
   const [dots, setDots] = useState<DotType>('square');
@@ -73,7 +73,7 @@ export default function App() {
 
   function reset() {
     setType('url');
-    setFields({ ...emptyFields, url: 'example.com' });
+    setFields({ ...emptyFields });
     setForeground('#000000');
     setBackground('#ffffff');
     setDots('square');
