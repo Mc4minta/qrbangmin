@@ -1,4 +1,4 @@
-import { Camera, Copy, ExternalLink, ImageUp, RefreshCw, ScanLine, Square, Video } from 'lucide-react';
+import { AlignLeft, Camera, Copy, ExternalLink, Globe, ImageUp, Mail, MessageSquare, Phone, RefreshCw, ScanLine, Square, Video, Wifi, X } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { useEffect, useId, useRef, useState } from 'react';
 import { classifyScan } from '../lib/scanResult';
@@ -143,6 +143,20 @@ export default function QRScanner({ language }: { language: Language }) {
     setImagePreview('');
   }
 
+  async function removeSelectedImage() {
+    request.current++;
+    clearImagePreview();
+    setResult(''); setError(''); setCopied(false); handled.current = false;
+    await releaseCamera();
+  }
+
+  function scanAgain() {
+    if (method === 'image') { void removeSelectedImage(); return; }
+    setResult(''); setError(''); setCopied(false); handled.current = false;
+    manuallyStopped.current = false;
+    void startCamera();
+  }
+
   async function pasteImage() {
     if (!navigator.clipboard?.read) { setError('Pasting images is not supported in this browser. Use Browse files instead.'); return; }
     setBusy(true); setError('');
@@ -157,6 +171,7 @@ export default function QRScanner({ language }: { language: Language }) {
   }
 
   const scan = result ? classifyScan(result) : null;
+  const ResultIcon = scan?.kind === 'website' ? Globe : scan?.kind === 'wifi' ? Wifi : scan?.kind === 'email' ? Mail : scan?.kind === 'phone' ? Phone : scan?.kind === 'sms' ? MessageSquare : AlignLeft;
   return <div className="scanner-card">
     <div className="scanner-heading"><div><h1>{t(language, 'scanTitle')}</h1><p>{t(language, 'scanSubtitle')}</p></div></div>
     <div className="scanner-tabs" role="tablist" aria-label="Scanning method">
@@ -169,6 +184,7 @@ export default function QRScanner({ language }: { language: Language }) {
           <div tabIndex={method === 'image' ? 0 : undefined} className={`${method === 'image' ? 'image-drop-zone' : 'camera-view'} ${dragging ? 'dragging' : ''} ${scanning ? 'is-scanning' : ''}`} aria-label={method === 'image' ? t(language, 'scanImage') : t(language, 'cameraPreview')} onClick={method === 'image' ? () => input.current?.click() : undefined} onDragOver={method === 'image' ? event => { event.preventDefault(); setDragging(true); } : undefined} onDragLeave={method === 'image' ? () => setDragging(false) : undefined} onDrop={method === 'image' ? event => { event.preventDefault(); setDragging(false); void decode(event.dataTransfer.files[0]); } : undefined}>
             <div id={readerId} className="scanner-reader" />
             {method === 'image' && imagePreview && <img className="selected-image-preview" src={imagePreview} alt="Selected QR image preview" />}
+            {method === 'image' && imagePreview && <button type="button" className="remove-image-button" aria-label="Remove selected image" onClick={event => { event.stopPropagation(); void removeSelectedImage(); }}><X size={18}/></button>}
             {method === 'image' && !imagePreview && <div className="drop-content"><ImageUp size={36}/><strong>{t(language, 'dragBrowse')}</strong><span>{t(language, 'pngJpgWebp')}</span></div>}
             {method === 'camera' && !scanning && <div className="camera-empty"><Video size={34}/><span>{busy ? `${t(language, 'scanning')}…` : t(language, 'cameraPreview')}</span></div>}
             {method === 'camera' && scanning && <span className="scan-frame" aria-hidden="true"/>}
@@ -180,7 +196,7 @@ export default function QRScanner({ language }: { language: Language }) {
         </div>
         <input ref={input} className="sr-only" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { void decode(event.target.files?.[0]); event.target.value = ''; }}/>
       </section>
-      <section className="scanner-result" aria-live="polite"><div className="result-heading"><h2>{t(language, 'scannedResult')}</h2><span className={`result-status ${error ? 'error-status' : result ? 'success-status' : scanning || busy ? 'scanning-status' : ''}`}><i/>{error ? t(language, 'noQr') : result ? t(language, 'success') : scanning || busy ? t(language, 'scanning') : method === 'image' ? t(language, 'waitingImage') : t(language, 'waitingCamera')}</span></div><pre className={!result ? 'empty-result' : ''}>{result || t(language, 'resultPlaceholder')}</pre>{error && <p className="error" role="alert">{error}</p>}<div className="result-actions"><button className="primary-button" disabled={!result} onClick={() => void navigator.clipboard.writeText(result).then(() => setCopied(true)).catch(() => setError('Copy failed. Select the text and copy it manually.'))}><Copy size={17}/>{copied ? t(language, 'copied') : t(language, 'copyResult')}</button>{scan?.url ? <a className="secondary-button" href={scan.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={17}/> {t(language, 'openLink')}</a> : <button className="secondary-button" disabled>{t(language, 'openLink')}</button>}<button className="secondary-button" disabled={!result && !error} onClick={() => { setResult(''); setError(''); setCopied(false); handled.current = false; }}><RefreshCw size={16}/> {t(language, 'scanAgain')}</button></div></section>
+      <section className="scanner-result" aria-live="polite"><div className="result-heading"><h2>{t(language, 'scannedResult')}</h2><span className={`result-status ${error ? 'error-status' : result ? 'success-status' : scanning || busy ? 'scanning-status' : ''}`}><i/>{error ? t(language, 'noQr') : result ? t(language, 'success') : scanning || busy ? t(language, 'scanning') : method === 'image' ? t(language, 'waitingImage') : t(language, 'waitingCamera')}</span></div>{!result ? <pre className="empty-result">{t(language, 'resultPlaceholder')}</pre> : <div className={`typed-result ${scan!.kind}`}><div className="result-type"><ResultIcon size={18}/><span>{t(language, scan!.kind)}</span></div>{scan!.kind === 'website' && scan!.url ? <a className="result-hyperlink" href={scan!.url} target="_blank" rel="noopener noreferrer">{scan!.url}<ExternalLink size={15}/></a> : scan!.kind === 'text' ? <pre className="text-result">{result}</pre> : <dl>{scan!.values?.map(field => <div key={field.label}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}</dl>}<details><summary>Raw QR content</summary><pre>{result}</pre></details></div>}{error && <p className="error" role="alert">{error}</p>}<div className="result-actions"><button className="primary-button" disabled={!result} onClick={() => void navigator.clipboard.writeText(result).then(() => setCopied(true)).catch(() => setError('Copy failed. Select the text and copy it manually.'))}><Copy size={17}/>{copied ? t(language, 'copied') : t(language, 'copyResult')}</button>{scan?.url ? <a className="secondary-button" href={scan.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={17}/> {t(language, 'openLink')}</a> : <button className="secondary-button" disabled>{t(language, 'openLink')}</button>}<button className="secondary-button" disabled={!result && !error} onClick={scanAgain}><RefreshCw size={16}/> {t(language, 'scanAgain')}</button></div></section>
     </div>
   </div>;
 }
