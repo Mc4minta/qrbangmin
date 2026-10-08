@@ -217,7 +217,7 @@ export default function App() {
       </main>
       <footer className="site-footer">
         <span>Made with love ❤️ by mc4minta</span>
-        <a href="https://github.com/mc4minta" target="_blank" rel="noopener noreferrer" aria-label="mc4minta on GitHub"><Github size={18}/><span>GitHub</span></a>
+        <a href="https://github.com/mc4minta/qrbangmin" target="_blank" rel="noopener noreferrer" aria-label="mc4minta on GitHub"><Github size={18}/><span>GitHub</span></a>
       </footer>
     </>
   );
