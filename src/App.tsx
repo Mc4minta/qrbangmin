@@ -98,9 +98,9 @@ export default function App() {
   return (
     <>
       <header className="site-header">
-        <a href="#main" className="brand" aria-label="Bangmin QR home">
+        <a href="#main" className="brand" aria-label="qrbangmin home">
           <span className="brand-icon"><QrCode size={22} /></span>
-          bang<span className="brand-qr">min qr</span><span className="brand-dot">.</span>
+          qr<span className="brand-qr">bangmin</span><span className="brand-dot">.</span>
         </a>
         <div className="header-actions">
           <div className="language-toggle" aria-label={t(language, 'language')}>
