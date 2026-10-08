@@ -8,18 +8,15 @@ import type {
 } from 'qr-code-styling';
 import { buildPayload, emptyFields, type QRType } from './lib/qrPayload';
 import { defaults } from './lib/qrDefaults';
+import { hasSafeContrast, validateQRPayload } from './lib/qrReliability';
+import { t, translateValidationError, type Language, type TranslationKey } from './i18n';
 import QRInputForm from './components/QRInputForm';
 import LogoUploader from './components/LogoUploader';
 import QRPreview from './components/QRPreview';
 const QRScanner = lazy(() => import('./components/QRScanner'));
 
 const types = [
-  { id: 'url', label: 'Website', icon: Link },
-  { id: 'text', label: 'Text', icon: AlignLeft },
-  { id: 'wifi', label: 'Wi-Fi', icon: Wifi },
-  { id: 'email', label: 'Email', icon: Mail },
-  { id: 'phone', label: 'Phone', icon: Phone },
-  { id: 'sms', label: 'SMS', icon: MessageSquare },
+  { id: 'url', label: 'website', icon: Link }, { id: 'text', label: 'text', icon: AlignLeft }, { id: 'wifi', label: 'wifi', icon: Wifi }, { id: 'email', label: 'email', icon: Mail }, { id: 'phone', label: 'phone', icon: Phone }, { id: 'sms', label: 'sms', icon: MessageSquare },
 ] as const;
 
 type Tab = 'generate' | 'scan';
@@ -31,6 +28,7 @@ export default function App() {
     const saved = localStorage.getItem('local-qr-theme');
     return saved === 'dark' || saved === 'light' ? saved : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
+  const [language, setLanguage] = useState<Language>(() => localStorage.getItem('local-qr-language') === 'th' ? 'th' : 'en');
   const [type, setType] = useState<QRType>('url');
   const [fields, setFields] = useState({ ...emptyFields });
   const [foreground, setForeground] = useState('#b91c1c');
@@ -38,7 +36,6 @@ export default function App() {
   const [dots, setDots] = useState<DotType>('square');
   const [corner, setCorner] = useState<CornerSquareType>('extra-rounded');
   const [cornerDot, setCornerDot] = useState<CornerDotType>('dot');
-  const [level, setLevel] = useState<ErrorCorrectionLevel>('M');
   const [logo, setLogo] = useState('');
   const [size, setSize] = useState(1024);
   const [resetKey, setResetKey] = useState(0);
@@ -48,6 +45,7 @@ export default function App() {
     document.documentElement.style.colorScheme = theme;
     localStorage.setItem('local-qr-theme', theme);
   }, [theme]);
+  useEffect(() => { document.documentElement.lang = language; localStorage.setItem('local-qr-language', language); }, [language]);
 
   function selectTab(next: Tab) { setTab(next); }
   function onTabsKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -58,6 +56,11 @@ export default function App() {
   }
 
   const payload = buildPayload(type, fields);
+  const validation = useMemo(() => payload.data ? validateQRPayload(payload.data, Boolean(logo)) : undefined, [payload.data, logo]);
+  const level: ErrorCorrectionLevel = validation?.valid ? validation.value.level : 'M';
+  const safeContrast = hasSafeContrast(foreground, background);
+  const generationError = payload.error || (validation && !validation.valid ? validation.error : undefined);
+  const localizedGenerationError = translateValidationError(language, generationError);
   const options: Options = useMemo(() => ({
     ...defaults,
     image: logo || undefined,
@@ -76,7 +79,6 @@ export default function App() {
     setDots('square');
     setCorner('extra-rounded');
     setCornerDot('dot');
-    setLevel('M');
     setLogo('');
     setSize(1024);
     setResetKey(n => n + 1);
@@ -84,7 +86,10 @@ export default function App() {
 
   function upload(value: string) {
     setLogo(value);
-    if (value) setLevel('H');
+  }
+
+  function useSafeSettings() {
+    setForeground('#171717'); setBackground('#ffffff'); setDots('square'); setCorner('square'); setCornerDot('square');
   }
 
   return (
@@ -94,26 +99,32 @@ export default function App() {
           <span className="brand-icon"><QrCode size={22} /></span>
           local<span className="brand-qr">qr</span><span className="brand-dot">.</span>
         </a>
-        <button
-          type="button"
-          className="theme-toggle"
-          onClick={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? <Moon size={19} /> : <Sun size={19} />}
-        </button>
+        <div className="header-actions">
+          <div className="language-toggle" aria-label={t(language, 'language')}>
+            <button type="button" aria-pressed={language === 'en'} className={language === 'en' ? 'active' : ''} onClick={() => setLanguage('en')}>EN</button>
+            <button type="button" aria-pressed={language === 'th'} className={language === 'th' ? 'active' : ''} onClick={() => setLanguage('th')}>TH</button>
+          </div>
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
+            aria-label={t(language, 'theme')}
+            title={t(language, 'theme')}
+          >
+            {theme === 'light' ? <Moon size={19} /> : <Sun size={19} />}
+          </button>
+        </div>
       </header>
 
       <main id="main">
         <div className="mode-tabs" role="tablist" aria-label="QR tools" onKeyDown={onTabsKeyDown}>
           <button id="tab-generate" role="tab" type="button" className={`mode-tab ${tab === 'generate' ? 'selected' : ''}`}
             aria-selected={tab === 'generate'} aria-controls="panel-generate" tabIndex={tab === 'generate' ? 0 : -1} onClick={() => selectTab('generate')}>
-            <QrCode size={18} /> Generate
+            <QrCode size={18} /> {t(language, 'generate')}
           </button>
           <button id="tab-scan" role="tab" type="button" className={`mode-tab ${tab === 'scan' ? 'selected' : ''}`}
             aria-selected={tab === 'scan'} aria-controls="panel-scan" tabIndex={tab === 'scan' ? 0 : -1} onClick={() => selectTab('scan')}>
-            <ScanLine size={18} /> Scan
+            <ScanLine size={18} /> {t(language, 'scan')}
           </button>
         </div>
 
@@ -121,33 +132,33 @@ export default function App() {
           <div id="panel-generate" role="tabpanel" aria-labelledby="tab-generate" className="workspace">
             <section className="config-card" aria-label="QR code settings">
               <div className="card-heading">
-                <h1>Generate QR Code</h1>
+                <h1>{t(language, 'generateTitle')}</h1>
                 <button type="button" className="reset-button" onClick={reset}>
-                  <RotateCcw size={14} /> Reset
+                  <RotateCcw size={14} /> {t(language, 'reset')}
                 </button>
               </div>
 
               <div className="section">
-                <h2>Content</h2>
+                <h2>{t(language, 'content')}</h2>
                 <div className="type-grid" role="group" aria-label="QR content type">
                   {types.map(({ id, label, icon: Icon }) => (
                     <button type="button" key={id}
                       className={`type-button ${type === id ? 'selected' : ''}`}
                       aria-pressed={type === id} onClick={() => setType(id)}>
-                      <Icon size={19} />{label}
+                      <Icon size={19} />{t(language, label as TranslationKey)}
                     </button>
                   ))}
                 </div>
-                <QRInputForm type={type} fields={fields} setFields={setFields} />
-                {!payload.data && <p className="validation" role="status">{payload.error}</p>}
+                <QRInputForm type={type} fields={fields} setFields={setFields} language={language} />
+                {localizedGenerationError && <p className="validation" role="status">{localizedGenerationError}</p>}
               </div>
 
               <div className="section">
-                <h2>Appearance</h2>
+                <h2>{t(language, 'appearance')}</h2>
                 <div className="color-grid">
                   {[
-                    { label: 'Foreground', value: foreground, change: setForeground },
-                    { label: 'Background', value: background, change: setBackground },
+                    { label: t(language, 'foreground'), value: foreground, change: setForeground },
+                    { label: t(language, 'background'), value: background, change: setBackground },
                   ].map(c => (
                     <label className="field" key={c.label}>{c.label}
                       <span className="color-control">
@@ -158,7 +169,7 @@ export default function App() {
                     </label>
                   ))}
                 </div>
-                <label className="field">Dot style</label>
+                <label className="field">{t(language, 'dotStyle')}</label>
                 <div className="style-grid" role="group" aria-label="Dot style">
                   {(['square', 'rounded', 'dots', 'classy'] as const).map(style => (
                     <button type="button" key={style}
@@ -167,49 +178,40 @@ export default function App() {
                       <span className={`dot-sample ${style}`}>
                         {Array.from({ length: 9 }, (_, i) => <i key={i} />)}
                       </span>
-                      <span>{style[0].toUpperCase() + style.slice(1)}</span>
+                      <span>{style === 'square' ? t(language, 'square') : style === 'rounded' ? t(language, 'rounded') : style}</span>
                     </button>
                   ))}
                 </div>
                 <div className="control-grid">
-                  <label className="field" htmlFor="corner">Corner squares
+                  <label className="field" htmlFor="corner">{t(language, 'cornerSquares')}
                     <select id="corner" value={corner}
                       onChange={e => setCorner(e.target.value as CornerSquareType)}>
-                      <option value="extra-rounded">Rounded</option>
-                      <option value="square">Square</option>
-                      <option value="dot">Circle</option>
+                      <option value="extra-rounded">{t(language, 'rounded')}</option><option value="square">{t(language, 'square')}</option><option value="dot">{t(language, 'circle')}</option>
                     </select>
                   </label>
-                  <label className="field" htmlFor="corner-dot">Corner dots
+                  <label className="field" htmlFor="corner-dot">{t(language, 'cornerDots')}
                     <select id="corner-dot" value={cornerDot}
                       onChange={e => setCornerDot(e.target.value as CornerDotType)}>
-                      <option value="dot">Circle</option>
-                      <option value="square">Square</option>
+                      <option value="dot">{t(language, 'circle')}</option><option value="square">{t(language, 'square')}</option>
                     </select>
                   </label>
                 </div>
+                {!safeContrast && <div className="reliability-warning" role="status">{t(language, 'colorWarning')} <button type="button" onClick={useSafeSettings}>{t(language, 'safeSettings')}</button></div>}
               </div>
 
               <div className="section">
-                <h2>Logo &amp; Error Correction</h2>
-                <LogoUploader key={resetKey} logo={logo} onChange={upload} />
-                <label className="field correction" htmlFor="correction">Error correction
-                  <select id="correction" value={level}
-                    onChange={e => setLevel(e.target.value as ErrorCorrectionLevel)}>
-                    <option value="L">Low (L) · 7%</option>
-                    <option value="M">Medium (M) · 15%</option>
-                    <option value="Q">Quartile (Q) · 25%</option>
-                    <option value="H">High (H) · 30%</option>
-                  </select>
-                </label>
+                <h2>{t(language, 'logoReliability')}</h2>
+                <LogoUploader key={resetKey} logo={logo} onChange={upload} language={language} />
+                <p className="validation">{t(language, 'automaticCorrection')}: <strong>{validation?.valid ? `${level} · ${validation.value.modules} modules` : t(language, 'waitingValid')}</strong></p>
+                {logo && <p className="hint">{t(language, 'logoLimit')}</p>}
               </div>
             </section>
-            <QRPreview key={resetKey} data={payload.data} error={payload.error}
+            <QRPreview key={resetKey} data={generationError ? undefined : payload.data} error={localizedGenerationError} language={language}
               options={options} type={type} size={size} setSize={setSize} />
           </div>
         ) : (
           <section id="panel-scan" role="tabpanel" aria-labelledby="tab-scan" className="scan-panel">
-            <Suspense fallback={<div className="scanner-card">Loading scanner…</div>}><QRScanner /></Suspense>
+            <Suspense fallback={<div className="scanner-card">Loading scanner…</div>}><QRScanner language={language} /></Suspense>
           </section>
         )}
       </main>

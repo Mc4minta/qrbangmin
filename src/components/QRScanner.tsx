@@ -2,10 +2,11 @@ import { Camera, Copy, ExternalLink, ImageUp, RefreshCw, ScanLine, Square, Video
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { useEffect, useId, useRef, useState } from 'react';
 import { classifyScan } from '../lib/scanResult';
+import { t, type Language } from '../i18n';
 
 const imageTypes = ['image/png', 'image/jpeg', 'image/webp'];
 
-export default function QRScanner() {
+export default function QRScanner({ language }: { language: Language }) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const readerId = `qr-reader-${id}`;
   const reader = useRef<Html5Qrcode | null>(null);
@@ -127,26 +128,26 @@ export default function QRScanner() {
 
   const scan = result ? classifyScan(result) : null;
   return <div className="scanner-card">
-    <div className="scanner-heading"><div><h1>Scan QR Code</h1><p>Scan from an image or camera.</p></div></div>
+    <div className="scanner-heading"><div><h1>{t(language, 'scanTitle')}</h1><p>{t(language, 'scanSubtitle')}</p></div></div>
     <div className="scanner-tabs" role="tablist" aria-label="Scanning method">
-      <button id="scan-image-tab" role="tab" aria-selected={method === 'image'} aria-controls="scan-image-panel" className={method === 'image' ? 'active' : ''} onClick={() => void changeMethod('image')}><ImageUp size={17}/> Scan image</button>
-      <button id="scan-camera-tab" role="tab" aria-selected={method === 'camera'} aria-controls="scan-camera-panel" className={method === 'camera' ? 'active' : ''} onClick={() => void changeMethod('camera')}><Camera size={17}/> Camera</button>
+      <button id="scan-image-tab" role="tab" aria-selected={method === 'image'} aria-controls="scan-image-panel" className={method === 'image' ? 'active' : ''} onClick={() => void changeMethod('image')}><ImageUp size={17}/> {t(language, 'scanImage')}</button>
+      <button id="scan-camera-tab" role="tab" aria-selected={method === 'camera'} aria-controls="scan-camera-panel" className={method === 'camera' ? 'active' : ''} onClick={() => void changeMethod('camera')}><Camera size={17}/> {t(language, 'camera')}</button>
     </div>
     <div className="scanner-workspace" onPaste={handlePaste}>
       <section className="scanner-input" aria-labelledby={method === 'image' ? 'scan-image-tab' : 'scan-camera-tab'}>
         {method === 'image' ? <div id="scan-image-panel" role="tabpanel">
           <div id={readerId} tabIndex={0} className={`image-drop-zone ${dragging ? 'dragging' : ''}`} onClick={() => input.current?.click()} onDragOver={event => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); void decode(event.dataTransfer.files[0]); }}>
-            <div className="drop-content"><ImageUp size={36}/><strong>Drag &amp; Drop or Browse</strong><span>PNG, JPG, WEBP</span></div>
+            <div className="drop-content"><ImageUp size={36}/><strong>{t(language, 'dragBrowse')}</strong><span>{t(language, 'pngJpgWebp')}</span></div>
           </div>
-          <div className="input-actions"><button className="primary-button" disabled={busy} onClick={() => input.current?.click()}><ImageUp size={17}/> Browse files</button><button className="secondary-button" disabled={busy} onClick={() => void pasteImage()}>Paste image</button></div>
+          <div className="input-actions"><button className="primary-button" disabled={busy} onClick={() => input.current?.click()}><ImageUp size={17}/> {t(language, 'browseFiles')}</button><button className="secondary-button" disabled={busy} onClick={() => void pasteImage()}>{t(language, 'pasteImage')}</button></div>
         </div> : <div id="scan-camera-panel" role="tabpanel">
-          <div id={readerId} className={`camera-view ${scanning ? 'is-scanning' : ''}`} aria-label="Camera preview">{!scanning && <div className="camera-empty"><Video size={34}/><span>Camera preview</span></div>}{scanning && <span className="scan-frame" aria-hidden="true"/>}</div>
-          {cameras.length > 1 && <label className="field camera-select" htmlFor="camera-device">Camera<select id="camera-device" value={cameraId} disabled={scanning} onChange={event => setCameraId(event.target.value)}>{cameras.map(camera => <option key={camera.id} value={camera.id}>{camera.label || 'Camera'}</option>)}</select></label>}
-          <div className="input-actions"><button className="primary-button" disabled={busy || scanning} onClick={() => void start()}><ScanLine size={17}/>{busy ? 'Starting…' : 'Start camera'}</button><button className="secondary-button" disabled={!scanning} onClick={() => void cancel()}><Square size={16}/> Stop camera</button></div>
+          <div id={readerId} className={`camera-view ${scanning ? 'is-scanning' : ''}`} aria-label={t(language, 'cameraPreview')}>{!scanning && <div className="camera-empty"><Video size={34}/><span>{t(language, 'cameraPreview')}</span></div>}{scanning && <span className="scan-frame" aria-hidden="true"/>}</div>
+          {cameras.length > 1 && <label className="field camera-select" htmlFor="camera-device">{t(language, 'cameraLabel')}<select id="camera-device" value={cameraId} disabled={scanning} onChange={event => setCameraId(event.target.value)}>{cameras.map(camera => <option key={camera.id} value={camera.id}>{camera.label || t(language, 'camera')}</option>)}</select></label>}
+          <div className="input-actions"><button className="primary-button" disabled={busy || scanning} onClick={() => void start()}><ScanLine size={17}/>{busy ? `${t(language, 'scanning')}…` : t(language, 'startCamera')}</button><button className="secondary-button" disabled={!scanning} onClick={() => void cancel()}><Square size={16}/> {t(language, 'stopCamera')}</button></div>
         </div>}
         <input ref={input} className="sr-only" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { void decode(event.target.files?.[0]); event.target.value = ''; }}/>
       </section>
-      <section className="scanner-result" aria-live="polite"><div className="result-heading"><h2>Scanned Result</h2><span className={`result-status ${error ? 'error-status' : result ? 'success-status' : scanning || busy ? 'scanning-status' : ''}`}><i/>{error ? 'No QR code found' : result ? 'Success' : scanning || busy ? 'Scanning' : method === 'image' ? 'Waiting for image' : 'Waiting for camera'}</span></div><pre className={!result ? 'empty-result' : ''}>{result || 'Your decoded QR content will appear here.'}</pre>{error && <p className="error" role="alert">{error}</p>}<div className="result-actions"><button className="primary-button" disabled={!result} onClick={() => void navigator.clipboard.writeText(result).then(() => setCopied(true)).catch(() => setError('Copy failed. Select the text and copy it manually.'))}><Copy size={17}/>{copied ? 'Copied' : 'Copy result'}</button>{scan?.url ? <a className="secondary-button" href={scan.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={17}/> Open link</a> : <button className="secondary-button" disabled>Open link</button>}<button className="secondary-button" disabled={!result && !error} onClick={() => { setResult(''); setError(''); setCopied(false); handled.current = false; }}><RefreshCw size={16}/> Scan again</button></div></section>
+      <section className="scanner-result" aria-live="polite"><div className="result-heading"><h2>{t(language, 'scannedResult')}</h2><span className={`result-status ${error ? 'error-status' : result ? 'success-status' : scanning || busy ? 'scanning-status' : ''}`}><i/>{error ? t(language, 'noQr') : result ? t(language, 'success') : scanning || busy ? t(language, 'scanning') : method === 'image' ? t(language, 'waitingImage') : t(language, 'waitingCamera')}</span></div><pre className={!result ? 'empty-result' : ''}>{result || t(language, 'resultPlaceholder')}</pre>{error && <p className="error" role="alert">{error}</p>}<div className="result-actions"><button className="primary-button" disabled={!result} onClick={() => void navigator.clipboard.writeText(result).then(() => setCopied(true)).catch(() => setError('Copy failed. Select the text and copy it manually.'))}><Copy size={17}/>{copied ? t(language, 'copied') : t(language, 'copyResult')}</button>{scan?.url ? <a className="secondary-button" href={scan.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={17}/> {t(language, 'openLink')}</a> : <button className="secondary-button" disabled>{t(language, 'openLink')}</button>}<button className="secondary-button" disabled={!result && !error} onClick={() => { setResult(''); setError(''); setCopied(false); handled.current = false; }}><RefreshCw size={16}/> {t(language, 'scanAgain')}</button></div></section>
     </div>
   </div>;
 }

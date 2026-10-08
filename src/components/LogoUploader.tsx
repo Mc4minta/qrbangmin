@@ -1,6 +1,7 @@
 import { ImagePlus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
-export default function LogoUploader({ logo, onChange }: { logo: string; onChange: (logo: string) => void }) {
+import { t, type Language } from '../i18n';
+export default function LogoUploader({ logo, onChange, language }: { logo: string; onChange: (logo: string) => void; language: Language }) {
   const [error, setError] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const request = useRef(0);
@@ -19,5 +20,5 @@ export default function LogoUploader({ logo, onChange }: { logo: string; onChang
       if (id === request.current) onChange(canvas.toDataURL('image/png'));
     } catch { if (id === request.current) setError('This image could not be read. Please try another file.'); }
   }
-  return <div><div className="upload-box">{logo ? <><img src={logo} alt="Uploaded logo"/><div><strong>Your logo is ready</strong><p>High correction enabled · 22% maximum width</p></div><button className="icon-button" aria-label="Remove logo" onClick={() => { request.current++; onChange(''); if (input.current) input.current.value = ''; }}><X size={18}/></button></> : <><ImagePlus size={26}/><div><strong>Add your own logo</strong><p>PNG, JPG or WebP · up to 2 MB</p></div></>}<button className="small-button" onClick={() => input.current?.click()}>{logo ? 'Replace' : 'Upload'}</button><input ref={input} className="sr-only" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Upload logo" onChange={e => { void upload(e.target.files?.[0]); e.target.value = ''; }}/></div>{error && <p role="alert" className="error">{error}</p>}</div>;
+  return <div><div className="upload-box">{logo ? <><img src={logo} alt="Uploaded logo"/><div><strong>{t(language, 'addLogo')}</strong><p>PNG, JPG or WebP · 2 MB</p></div><button className="icon-button" aria-label={t(language, 'removeLogo')} onClick={() => { request.current++; onChange(''); if (input.current) input.current.value = ''; }}><X size={18}/></button></> : <><ImagePlus size={26}/><div><strong>{t(language, 'addLogo')}</strong><p>PNG, JPG or WebP · 2 MB</p></div></>}<button className="small-button" onClick={() => input.current?.click()}>{logo ? t(language, 'replace') : t(language, 'upload')}</button><input ref={input} className="sr-only" type="file" accept="image/png,image/jpeg,image/webp" aria-label={t(language, 'upload')} onChange={e => { void upload(e.target.files?.[0]); e.target.value = ''; }}/></div>{error && <p role="alert" className="error">{error}</p>}</div>;
 }

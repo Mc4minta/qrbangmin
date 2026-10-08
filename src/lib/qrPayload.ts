@@ -32,6 +32,5 @@ export function buildPayload(type: QRType, fields: Fields): PayloadResult {
       data = type === 'phone' ? `tel:${phone}` : `sms:${phone}${fields.message ? `?body=${encodeURIComponent(fields.message)}` : ''}`; break;
     }
   }
-  if (new TextEncoder().encode(data).length > 1200) return { error: 'Content is too long. Keep the encoded content under 1,200 bytes; higher correction levels may need less.' };
   return { data };
 }

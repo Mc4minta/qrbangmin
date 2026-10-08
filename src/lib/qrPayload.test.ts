@@ -12,5 +12,5 @@ describe('QR payloads', () => {
   it('encodes SMS content', () => expect(payload('sms', { phone: '+15551234567', message: 'Hi & hello?' }).data).toBe('sms:+15551234567?body=Hi%20%26%20hello%3F'));
   it('rejects empty inputs for every type', () => { for (const type of ['url', 'text', 'wifi', 'email', 'phone', 'sms'] as QRType[]) expect(payload(type, {}).error).toBeTruthy(); });
   it('rejects invalid email, phone, missing passwords, and whitespace text', () => { expect(payload('email', { email: 'wrong' }).error).toBeTruthy(); expect(payload('phone', { phone: 'abc123' }).error).toBeTruthy(); expect(payload('wifi', { ssid: 'Home' }).error).toBeTruthy(); expect(payload('text', { text: '  ' }).error).toBeTruthy(); });
-  it('limits encoded UTF-8 bytes', () => { expect(payload('text', { text: '🌍'.repeat(301) }).error).toBeTruthy(); expect(payload('text', { text: 'a'.repeat(1200) }).data).toHaveLength(1200); });
+  it('preserves complete content for encoder-based capacity validation', () => { expect(payload('text', { text: '🌍'.repeat(301) }).data).toBe('🌍'.repeat(301)); expect(payload('text', { text: 'a'.repeat(1200) }).data).toHaveLength(1200); });
 });
