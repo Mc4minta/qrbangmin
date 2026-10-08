@@ -34,7 +34,7 @@ export default function QRPreview({ data, error, options, type, size, setSize, l
   async function download() {
     if (!qr.current || !ready) return;
     setBusy(true); setExportError('');
-    try { await qr.current.download({ name: `local-qr-${type}-${size}px`, extension: format }); }
+    try { await qr.current.download({ name: `bangmin-qr-${type}-${size}px`, extension: format }); }
     catch { setExportError('Download failed. Try SVG or another image size.'); }
     finally { setBusy(false); }
   }

@@ -1,4 +1,4 @@
-# Local QR
+# Bangmin QR
 
 A free, responsive QR code studio. QR content and uploaded logos are processed exclusively in your browser: no accounts, backend, external generation API, analytics, or stored Wi-Fi passwords.
 

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   QrCode, Link, AlignLeft, Wifi, Mail, Phone, MessageSquare,
-  RotateCcw, Moon, Sun, ScanLine, Palette, Image, Plus, Minus,
+  RotateCcw, Moon, Sun, ScanLine, Palette, Image, Plus, Minus, Github,
 } from 'lucide-react';
 import type {
   Options, DotType, CornerSquareType, CornerDotType, ErrorCorrectionLevel,
@@ -98,9 +98,9 @@ export default function App() {
   return (
     <>
       <header className="site-header">
-        <a href="#main" className="brand" aria-label="Local QR home">
+        <a href="#main" className="brand" aria-label="Bangmin QR home">
           <span className="brand-icon"><QrCode size={22} /></span>
-          local<span className="brand-qr">qr</span><span className="brand-dot">.</span>
+          bang<span className="brand-qr">min qr</span><span className="brand-dot">.</span>
         </a>
         <div className="header-actions">
           <div className="language-toggle" aria-label={t(language, 'language')}>
@@ -215,6 +215,10 @@ export default function App() {
           </section>
         )}
       </main>
+      <footer className="site-footer">
+        <span>Made with love ❤️ by mc4minta</span>
+        <a href="https://github.com/mc4minta" target="_blank" rel="noopener noreferrer" aria-label="mc4minta on GitHub"><Github size={18}/><span>GitHub</span></a>
+      </footer>
     </>
   );
 }
