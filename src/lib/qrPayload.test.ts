@@ -3,7 +3,7 @@ import { buildPayload, emptyFields, type Fields, type QRType } from './qrPayload
 const payload = (type: QRType, changes: Partial<Fields>) => buildPayload(type, { ...emptyFields, ...changes });
 describe('QR payloads', () => {
   it('normalizes website URLs', () => expect(payload('url', { url: ' https://example.com ' }).data).toBe('https://example.com/'));
-  it('rejects malformed and unsafe URLs', () => { for (const url of ['', 'example.com', 'javascript:alert(1)', 'ftp://example.com']) expect(payload('url', { url }).error).toBeTruthy(); });
+  it('normalizes bare domains and rejects unsafe URLs', () => { expect(payload('url', { url: 'example.com' }).data).toBe('https://example.com/'); for (const url of ['', 'javascript:alert(1)', 'ftp://example.com']) expect(payload('url', { url }).error).toBeTruthy(); });
   it('preserves text exactly', () => expect(payload('text', { text: ' hello\nworld 🌍 ' }).data).toBe(' hello\nworld 🌍 '));
   it('escapes Wi-Fi special characters', () => expect(payload('wifi', { ssid: 'a;b:c,d"e\\f', password: 'p;q', hidden: true }).data).toBe('WIFI:T:WPA;S:a\\;b\\:c\\,d\\"e\\\\f;P:p\\;q;H:true;;'));
   it('supports open and WEP networks', () => { expect(payload('wifi', { ssid: 'Cafe', security: 'nopass' }).data).toBe('WIFI:T:nopass;S:Cafe;H:false;;'); expect(payload('wifi', { ssid: 'Cafe', security: 'WEP', password: '12345' }).data).toContain('T:WEP'); });

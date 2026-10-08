@@ -30,12 +30,12 @@ export default function App() {
   });
   const [language, setLanguage] = useState<Language>(() => localStorage.getItem('local-qr-language') === 'th' ? 'th' : 'en');
   const [type, setType] = useState<QRType>('url');
-  const [fields, setFields] = useState({ ...emptyFields });
-  const [foreground, setForeground] = useState('#b91c1c');
+  const [fields, setFields] = useState({ ...emptyFields, url: 'example.com' });
+  const [foreground, setForeground] = useState('#000000');
   const [background, setBackground] = useState('#ffffff');
   const [dots, setDots] = useState<DotType>('square');
-  const [corner, setCorner] = useState<CornerSquareType>('extra-rounded');
-  const [cornerDot, setCornerDot] = useState<CornerDotType>('dot');
+  const [corner, setCorner] = useState<CornerSquareType>('square');
+  const [cornerDot, setCornerDot] = useState<CornerDotType>('square');
   const [logo, setLogo] = useState('');
   const [size, setSize] = useState(1024);
   const [resetKey, setResetKey] = useState(0);
@@ -73,12 +73,12 @@ export default function App() {
 
   function reset() {
     setType('url');
-    setFields({ ...emptyFields });
-    setForeground('#b91c1c');
+    setFields({ ...emptyFields, url: 'example.com' });
+    setForeground('#000000');
     setBackground('#ffffff');
     setDots('square');
-    setCorner('extra-rounded');
-    setCornerDot('dot');
+    setCorner('square');
+    setCornerDot('square');
     setLogo('');
     setSize(1024);
     setResetKey(n => n + 1);

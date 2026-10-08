@@ -8,7 +8,7 @@ export function buildPayload(type: QRType, fields: Fields): PayloadResult {
   switch (type) {
     case 'url': {
       if (!fields.url.trim()) return { error: 'Enter a website URL to get started.' };
-      try { const url = new URL(fields.url.trim()); if (!['https:', 'http:'].includes(url.protocol) || !url.hostname) throw new Error(); data = url.href; }
+      try { const input = fields.url.trim(); if (/^[a-z][a-z\d+.-]*:/i.test(input) && !/^https?:\/\//i.test(input)) throw new Error(); const url = new URL(/^https?:\/\//i.test(input) ? input : `https://${input}`); if (!['https:', 'http:'].includes(url.protocol) || !url.hostname) throw new Error(); data = url.href; }
       catch { return { error: 'Enter a complete http:// or https:// URL.' }; }
       break;
     }
