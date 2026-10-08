@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   QrCode, Link, AlignLeft, Wifi, Mail, Phone, MessageSquare,
-  RotateCcw, Moon, Sun, ScanLine,
+  RotateCcw, Moon, Sun, ScanLine, Palette, Image, Plus, Minus,
 } from 'lucide-react';
 import type {
   Options, DotType, CornerSquareType, CornerDotType, ErrorCorrectionLevel,
@@ -21,6 +21,7 @@ const types = [
 
 type Tab = 'generate' | 'scan';
 type Theme = 'light' | 'dark';
+type AccordionSection = 'content' | 'colors' | 'logo' | 'design';
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('generate');
@@ -39,6 +40,7 @@ export default function App() {
   const [logo, setLogo] = useState('');
   const [size, setSize] = useState(1024);
   const [resetKey, setResetKey] = useState(0);
+  const [expandedSection, setExpandedSection] = useState<AccordionSection | null>('content');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -91,6 +93,7 @@ export default function App() {
   function useSafeSettings() {
     setForeground('#171717'); setBackground('#ffffff'); setDots('square'); setCorner('square'); setCornerDot('square');
   }
+  function toggleSection(section: AccordionSection) { setExpandedSection(current => current === section ? null : section); }
 
   return (
     <>
@@ -138,8 +141,10 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="section">
-                <h2>{t(language, 'content')}</h2>
+              <div className="config-accordion">
+              <section className={`accordion-section ${expandedSection === 'content' ? 'expanded' : ''}`}>
+                <button type="button" className="accordion-header" aria-expanded={expandedSection === 'content'} aria-controls="accordion-content" onClick={() => toggleSection('content')}><span className="accordion-icon"><Link size={20}/></span><span>{t(language, 'content')}</span>{expandedSection === 'content' ? <Minus size={19}/> : <Plus size={19}/>}</button>
+                {expandedSection === 'content' && <div id="accordion-content" className="accordion-panel">
                 <div className="type-grid" role="group" aria-label="QR content type">
                   {types.map(({ id, label, icon: Icon }) => (
                     <button type="button" key={id}
@@ -151,10 +156,12 @@ export default function App() {
                 </div>
                 <QRInputForm type={type} fields={fields} setFields={setFields} language={language} />
                 {localizedGenerationError && <p className="validation" role="status">{localizedGenerationError}</p>}
-              </div>
+                </div>}
+              </section>
 
-              <div className="section">
-                <h2>{t(language, 'appearance')}</h2>
+              <section className={`accordion-section ${expandedSection === 'colors' ? 'expanded' : ''}`}>
+                <button type="button" className="accordion-header" aria-expanded={expandedSection === 'colors'} aria-controls="accordion-colors" onClick={() => toggleSection('colors')}><span className="accordion-icon"><Palette size={20}/></span><span>{t(language, 'colors')}</span>{expandedSection === 'colors' ? <Minus size={19}/> : <Plus size={19}/>}</button>
+                {expandedSection === 'colors' && <div id="accordion-colors" className="accordion-panel">
                 <div className="color-grid">
                   {[
                     { label: t(language, 'foreground'), value: foreground, change: setForeground },
@@ -169,41 +176,34 @@ export default function App() {
                     </label>
                   ))}
                 </div>
+                {!safeContrast && <div className="reliability-warning" role="status">{t(language, 'colorWarning')} <button type="button" onClick={useSafeSettings}>{t(language, 'safeSettings')}</button></div>}
+                </div>}
+              </section>
+
+              <section className={`accordion-section ${expandedSection === 'logo' ? 'expanded' : ''}`}>
+                <button type="button" className="accordion-header" aria-expanded={expandedSection === 'logo'} aria-controls="accordion-logo" onClick={() => toggleSection('logo')}><span className="accordion-icon"><Image size={20}/></span><span>{t(language, 'logo')}</span>{expandedSection === 'logo' ? <Minus size={19}/> : <Plus size={19}/>}</button>
+                {expandedSection === 'logo' && <div id="accordion-logo" className="accordion-panel">
+                <LogoUploader key={resetKey} logo={logo} onChange={upload} language={language} />
+                {logo && <p className="hint">{t(language, 'logoLimit')}</p>}
+                </div>}
+              </section>
+
+              <section className={`accordion-section ${expandedSection === 'design' ? 'expanded' : ''}`}>
+                <button type="button" className="accordion-header" aria-expanded={expandedSection === 'design'} aria-controls="accordion-design" onClick={() => toggleSection('design')}><span className="accordion-icon"><QrCode size={20}/></span><span>{t(language, 'customizeDesign')}</span>{expandedSection === 'design' ? <Minus size={19}/> : <Plus size={19}/>}</button>
+                {expandedSection === 'design' && <div id="accordion-design" className="accordion-panel">
                 <label className="field">{t(language, 'dotStyle')}</label>
                 <div className="style-grid" role="group" aria-label="Dot style">
                   {(['square', 'rounded', 'dots', 'classy'] as const).map(style => (
-                    <button type="button" key={style}
-                      className={`style-button ${dots === style ? 'selected' : ''}`}
-                      aria-pressed={dots === style} onClick={() => setDots(style)}>
-                      <span className={`dot-sample ${style}`}>
-                        {Array.from({ length: 9 }, (_, i) => <i key={i} />)}
-                      </span>
-                      <span>{style === 'square' ? t(language, 'square') : style === 'rounded' ? t(language, 'rounded') : style}</span>
-                    </button>
+                    <button type="button" key={style} className={`style-button ${dots === style ? 'selected' : ''}`} aria-pressed={dots === style} onClick={() => setDots(style)}><span className={`dot-sample ${style}`}>{Array.from({ length: 9 }, (_, i) => <i key={i} />)}</span><span>{style === 'square' ? t(language, 'square') : style === 'rounded' ? t(language, 'rounded') : style}</span></button>
                   ))}
                 </div>
                 <div className="control-grid">
-                  <label className="field" htmlFor="corner">{t(language, 'cornerSquares')}
-                    <select id="corner" value={corner}
-                      onChange={e => setCorner(e.target.value as CornerSquareType)}>
-                      <option value="extra-rounded">{t(language, 'rounded')}</option><option value="square">{t(language, 'square')}</option><option value="dot">{t(language, 'circle')}</option>
-                    </select>
-                  </label>
-                  <label className="field" htmlFor="corner-dot">{t(language, 'cornerDots')}
-                    <select id="corner-dot" value={cornerDot}
-                      onChange={e => setCornerDot(e.target.value as CornerDotType)}>
-                      <option value="dot">{t(language, 'circle')}</option><option value="square">{t(language, 'square')}</option>
-                    </select>
-                  </label>
+                  <label className="field" htmlFor="corner">{t(language, 'cornerSquares')}<select id="corner" value={corner} onChange={e => setCorner(e.target.value as CornerSquareType)}><option value="extra-rounded">{t(language, 'rounded')}</option><option value="square">{t(language, 'square')}</option><option value="dot">{t(language, 'circle')}</option></select></label>
+                  <label className="field" htmlFor="corner-dot">{t(language, 'cornerDots')}<select id="corner-dot" value={cornerDot} onChange={e => setCornerDot(e.target.value as CornerDotType)}><option value="dot">{t(language, 'circle')}</option><option value="square">{t(language, 'square')}</option></select></label>
                 </div>
-                {!safeContrast && <div className="reliability-warning" role="status">{t(language, 'colorWarning')} <button type="button" onClick={useSafeSettings}>{t(language, 'safeSettings')}</button></div>}
-              </div>
-
-              <div className="section">
-                <h2>{t(language, 'logoReliability')}</h2>
-                <LogoUploader key={resetKey} logo={logo} onChange={upload} language={language} />
                 <p className="validation">{t(language, 'automaticCorrection')}: <strong>{validation?.valid ? `${level} · ${validation.value.modules} modules` : t(language, 'waitingValid')}</strong></p>
-                {logo && <p className="hint">{t(language, 'logoLimit')}</p>}
+                </div>}
+              </section>
               </div>
             </section>
             <QRPreview key={resetKey} data={generationError ? undefined : payload.data} error={localizedGenerationError} language={language}
